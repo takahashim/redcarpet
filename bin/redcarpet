@@ -34,5 +34,7 @@ ARGV.delete_if do |arg|
   end
 end
 
+render_extensions[:hard_wrap] = true if parse_extensions[:denden]
+
 render = renderer.new(render_extensions)
 STDOUT.write(Redcarpet::Markdown.new(render, parse_extensions).render(ARGF.read))

@@ -75,6 +75,7 @@ static size_t char_autolink_www(struct buf *ob, struct sd_markdown *rndr, uint8_
 static size_t char_link(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 static size_t char_superscript(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 static size_t char_tcy(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
+static size_t char_ruby(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 
 enum markdown_char_t {
 	MD_CHAR_NONE = 0,
@@ -90,6 +91,7 @@ enum markdown_char_t {
 	MD_CHAR_AUTOLINK_WWW,
 	MD_CHAR_SUPERSCRIPT,
 	MD_CHAR_TCY,
+	MD_CHAR_RUBY,
 };
 
 static char_trigger markdown_char_ptrs[] = {
@@ -106,6 +108,7 @@ static char_trigger markdown_char_ptrs[] = {
 	&char_autolink_www,
 	&char_superscript,
 	&char_tcy,
+	&char_ruby,
 };
 
 /* render • structure containing one particular render */
@@ -1150,6 +1153,55 @@ char_tcy(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset,
 	} else {
 		if (!rndr->cb.tcy(ob, 0, rndr->opaque))
 			end = 0;
+	}
+
+	return end;
+}
+
+static size_t
+char_ruby(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size)
+{
+	size_t end, nb = 0, i, f_begin, f_end, f_sep;
+
+	/* counting the number of backticks in the delimiter */
+	while (nb < size && data[nb] == '{')
+		nb++;
+
+	/* finding the next delimiter */
+	i = 0;
+	for (end = nb; end < size && i < nb; end++) {
+		if (data[end] == '}') i++;
+		else i = 0;
+	}
+
+	if (i < nb && end >= size)
+		return 0; /* no matching delimiter */
+
+	/* trimming outside whitespaces */
+	f_begin = nb;
+	while (f_begin < end && data[f_begin] == ' ')
+		f_begin++;
+
+	f_end = end - nb;
+	while (f_end > nb && data[f_end-1] == ' ')
+		f_end--;
+
+	/* real code span */
+	if (f_begin < f_end) {
+		f_sep = 0;
+		for (i = f_begin; i < f_end; i++) {
+			if (data[i] == '|') {
+				f_sep = i;
+				break;
+			}
+		}
+		if (f_sep == 0) return 0;
+
+		struct buf work = { data + f_begin, f_end - f_begin, 0, 0 };
+		if (!rndr->cb.ruby(ob, &work, rndr->opaque))
+			end = 0;
+	} else {
+		return 0;
 	}
 
 	return end;
@@ -2533,8 +2585,10 @@ sd_markdown_new(
 	if (extensions & MKDEXT_SUPERSCRIPT)
 		md->active_char['^'] = MD_CHAR_SUPERSCRIPT;
 
-	if (extensions & MKDEXT_DENDEN)
+	if (extensions & MKDEXT_DENDEN) {
 		md->active_char['^'] = MD_CHAR_TCY;
+		md->active_char['{'] = MD_CHAR_RUBY;
+	}
 
 	/* Extension data */
 	md->ext_flags = extensions;

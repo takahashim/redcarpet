@@ -511,6 +511,26 @@ rndr_tcy(struct buf *ob, const struct buf *text, void *opaque)
 	return 1;
 }
 
+static int
+rndr_ruby(struct buf *ob, const struct buf *text, void *opaque)
+{
+	if (!text || !text->size) return 0;
+	BUFPUTSL(ob, "<ruby>");
+	size_t pos;
+	for (pos = 0; pos < text->size; pos++) {
+		if (text->data[pos] == '|') {
+			bufput(ob, text->data, pos);
+			pos++;
+			break;
+		}
+	}
+	BUFPUTSL(ob, "<rt>");
+	bufput(ob, text->data + pos, text->size - pos);
+	BUFPUTSL(ob, "</rt>");
+	BUFPUTSL(ob, "</ruby>");
+	return 1;
+}
+
 static void
 rndr_normal_text(struct buf *ob, const struct buf *text, void *opaque)
 {
@@ -599,6 +619,7 @@ sdhtml_toc_renderer(struct sd_callbacks *callbacks, struct html_renderopt *optio
 		rndr_strikethrough,
 		rndr_superscript,
 		rndr_tcy,
+		rndr_ruby,
 
 		NULL,
 		NULL,
@@ -642,6 +663,7 @@ sdhtml_renderer(struct sd_callbacks *callbacks, struct html_renderopt *options, 
 		rndr_strikethrough,
 		rndr_superscript,
 		rndr_tcy,
+		rndr_ruby,
 
 		NULL,
 		rndr_normal_text,

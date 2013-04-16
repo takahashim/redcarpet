@@ -373,6 +373,14 @@ rndr_hrule(struct buf *ob, void *opaque)
 	bufputs(ob, USE_XHTML(options) ? "<hr/>\n" : "<hr>\n");
 }
 
+static void
+rndr_pagebreak(struct buf *ob, void *opaque)
+{
+	struct html_renderopt *options = opaque;
+	if (ob->size) bufputc(ob, '\n');
+	bufputs(ob, "<span class=”page-break”></span>\n");
+}
+
 static int
 rndr_image(struct buf *ob, const struct buf *link, const struct buf *title, const struct buf *alt, void *opaque)
 {
@@ -603,6 +611,7 @@ sdhtml_renderer(struct sd_callbacks *callbacks, struct html_renderopt *options, 
 		rndr_raw_block,
 		rndr_header,
 		rndr_hrule,
+		rndr_pagebreak,
 		rndr_list,
 		rndr_listitem,
 		rndr_paragraph,

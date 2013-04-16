@@ -77,6 +77,12 @@ rndr_hrule(struct buf *ob, void *opaque)
 }
 
 static void
+rndr_pagebreak(struct buf *ob, void *opaque)
+{
+	BLOCK_CALLBACK("pagebreak", 0);
+}
+
+static void
 rndr_list(struct buf *ob, const struct buf *text, int flags, void *opaque)
 {
 	BLOCK_CALLBACK("list", 2, buf2str(text),
@@ -261,6 +267,7 @@ static struct sd_callbacks rb_redcarpet_callbacks = {
 	rndr_raw_block,
 	rndr_header,
 	rndr_hrule,
+	rndr_pagebreak,
 	rndr_list,
 	rndr_listitem,
 	rndr_paragraph,
@@ -293,6 +300,7 @@ static const char *rb_redcarpet_method_names[] = {
 	"block_html",
 	"header",
 	"hrule",
+	"pagebreak",
 	"list",
 	"list_item",
 	"paragraph",

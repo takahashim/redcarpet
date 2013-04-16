@@ -1159,6 +1159,40 @@ is_hrule(uint8_t *data, size_t size)
 	return n >= 3;
 }
 
+/* is_hrule • returns whether a line is a horizontal rule */
+static int
+is_pagebreak(struct sd_markdown *rndr, uint8_t *data, size_t size)
+{
+	size_t i = 0, n = 0;
+	uint8_t c;
+
+	if (! (rndr->ext_flags & MKDEXT_DENDEN))
+		return 0;
+
+	/* skipping initial spaces */
+	if (size < 3) return 0;
+	if (data[0] == ' ') { i++;
+	if (data[1] == ' ') { i++;
+	if (data[2] == ' ') { i++; } } }
+
+	/* looking at the hrule uint8_t */
+	if (i + 2 >= size
+	|| (data[i] != '='))
+		return 0;
+	c = data[i];
+
+	/* the whole line must be the char or whitespace */
+	while (i < size && data[i] != '\n') {
+		if (data[i] == c) n++;
+		else if (data[i] != ' ')
+			return 0;
+
+		i++;
+	}
+
+	return n >= 3;
+}
+
 /* check if a line begins with a code fence; return the
  * width of the code fence */
 static size_t
@@ -1447,6 +1481,7 @@ parse_paragraph(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 
 		if (is_atxheader(rndr, data + i, size - i) ||
 			is_hrule(data + i, size - i) ||
+			is_pagebreak(rndr, data + i, size - i) ||
 			prefix_quote(data + i, size - i)) {
 			end = i;
 			break;
@@ -1700,7 +1735,7 @@ parse_listitem(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t s
 		}
 
 		/* checking for a new item */
-		if ((has_next_uli && !is_hrule(data + beg + i, end - beg - i)) || has_next_oli) {
+		if ((has_next_uli && !(is_hrule(data + beg + i, end - beg - i) || is_pagebreak(rndr, data + beg + i, end - beg - i))) || has_next_oli) {
 			if (in_empty)
 				has_inside_empty = 1;
 
@@ -2212,6 +2247,16 @@ parse_block(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t size
 		else if (is_hrule(txt_data, end)) {
 			if (rndr->cb.hrule)
 				rndr->cb.hrule(ob, rndr->opaque);
+
+			while (beg < size && data[beg] != '\n')
+				beg++;
+
+			beg++;
+		}
+
+		else if (is_pagebreak(rndr, txt_data, end)) {
+			if (rndr->cb.pagebreak)
+				rndr->cb.pagebreak(ob, rndr->opaque);
 
 			while (beg < size && data[beg] != '\n')
 				beg++;

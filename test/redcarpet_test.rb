@@ -371,6 +371,27 @@ text
     assert render_with({:no_intra_emphasis => true}, "this also fails: hello_world_#bye") !~ /<em>/
     assert render_with({:no_intra_emphasis => true}, "this works: hello_my_world") !~ /<em>/
   end
+
+  # denden markdown
+  def test_page_break
+    rd = render_with({:denden => true}, "===\n")
+    assert rd =~ %r[<span class=”page-break”></span>]
+  end
+
+  def test_group_ruby
+    rd = render_with({:denden => true}, "{電子出版|でんししゅっぱん}を手軽に\n")
+    assert rd =~ %r[<p><ruby>電子出版<rt>でんししゅっぱん</rt></ruby>を手軽に</p>]
+  end
+
+  def test_mono_ruby
+    rd = render_with({:denden => true}, "{電子出版|でん|し|しゅっ|ぱん}を手軽に\n")
+    assert rd =~ %r[<p><ruby>電<rt>でん</rt>子<rt>し</rt>出<rt>しゅっ</rt>版<rt>ぱん</rt></ruby>を手軽に</p>]
+  end
+
+  def test_tcy
+    rd = render_with({:denden => true}, "昭和^53^年\n")
+    assert rd =~ %r[<p>昭和<span class="tcy">53</span>年</p>]
+  end
 end
 
 class CustomRenderTest < Test::Unit::TestCase

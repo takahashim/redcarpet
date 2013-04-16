@@ -74,6 +74,7 @@ static size_t char_autolink_email(struct buf *ob, struct sd_markdown *rndr, uint
 static size_t char_autolink_www(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 static size_t char_link(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 static size_t char_superscript(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
+static size_t char_tcy(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size);
 
 enum markdown_char_t {
 	MD_CHAR_NONE = 0,
@@ -88,6 +89,7 @@ enum markdown_char_t {
 	MD_CHAR_AUTOLINK_EMAIL,
 	MD_CHAR_AUTOLINK_WWW,
 	MD_CHAR_SUPERSCRIPT,
+	MD_CHAR_TCY,
 };
 
 static char_trigger markdown_char_ptrs[] = {
@@ -103,6 +105,7 @@ static char_trigger markdown_char_ptrs[] = {
 	&char_autolink_email,
 	&char_autolink_www,
 	&char_superscript,
+	&char_tcy,
 };
 
 /* render • structure containing one particular render */
@@ -1109,6 +1112,47 @@ char_superscript(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t
 	rndr_popbuf(rndr, BUFFER_SPAN);
 
 	return (sup_start == 2) ? sup_len + 1 : sup_len;
+}
+
+static size_t
+char_tcy(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t offset, size_t size)
+{
+	size_t end, nb = 0, i, f_begin, f_end;
+
+	/* counting the number of backticks in the delimiter */
+	while (nb < size && data[nb] == '^')
+		nb++;
+
+	/* finding the next delimiter */
+	i = 0;
+	for (end = nb; end < size && i < nb; end++) {
+		if (data[end] == '^') i++;
+		else i = 0;
+	}
+
+	if (i < nb && end >= size)
+		return 0; /* no matching delimiter */
+
+	/* trimming outside whitespaces */
+	f_begin = nb;
+	while (f_begin < end && data[f_begin] == ' ')
+		f_begin++;
+
+	f_end = end - nb;
+	while (f_end > nb && data[f_end-1] == ' ')
+		f_end--;
+
+	/* real code span */
+	if (f_begin < f_end) {
+		struct buf work = { data + f_begin, f_end - f_begin, 0, 0 };
+		if (!rndr->cb.tcy(ob, &work, rndr->opaque))
+			end = 0;
+	} else {
+		if (!rndr->cb.tcy(ob, 0, rndr->opaque))
+			end = 0;
+	}
+
+	return end;
 }
 
 /*********************************
@@ -2488,6 +2532,9 @@ sd_markdown_new(
 
 	if (extensions & MKDEXT_SUPERSCRIPT)
 		md->active_char['^'] = MD_CHAR_SUPERSCRIPT;
+
+	if (extensions & MKDEXT_DENDEN)
+		md->active_char['^'] = MD_CHAR_TCY;
 
 	/* Extension data */
 	md->ext_flags = extensions;

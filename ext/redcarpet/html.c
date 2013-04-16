@@ -27,6 +27,28 @@
 
 #define USE_XHTML(opt) (opt->flags & HTML_USE_XHTML)
 
+
+/// UTF8 character length table
+const uint8_t	utf8_len_table[] = {
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+		3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+		4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1,
+	};
+
+
 int
 sdhtml_is_tag(const uint8_t *tag_data, size_t tag_size, const char *tagname)
 {
@@ -516,17 +538,41 @@ rndr_ruby(struct buf *ob, const struct buf *text, void *opaque)
 {
 	if (!text || !text->size) return 0;
 	BUFPUTSL(ob, "<ruby>");
-	size_t pos;
+	size_t pos, w_end, ruby = 0;
 	for (pos = 0; pos < text->size; pos++) {
 		if (text->data[pos] == '|') {
-			bufput(ob, text->data, pos);
-			pos++;
-			break;
+			if (ruby == 0) {
+				w_end = pos;
+				ruby = pos + 1;
+			} else {
+				pos++;
+				break;
+			}
 		}
 	}
-	BUFPUTSL(ob, "<rt>");
-	bufput(ob, text->data + pos, text->size - pos);
-	BUFPUTSL(ob, "</rt>");
+	if (pos < text->size) {
+		// mono ruby like
+		uint8_t len, r_len;
+		for (pos = 0; pos < w_end && ruby < text->size; pos += len, ruby += r_len + 1) {
+			len = utf8_len_table[(uint8_t)text->data[pos]];
+			bufput(ob, text->data + pos, len);
+
+			for (r_len = 0; ruby + r_len < text->size; r_len++) {
+				if (text->data[ruby + r_len] == '|') break;
+			}
+			BUFPUTSL(ob, "<rt>");
+			bufput(ob, text->data + ruby, r_len);
+			BUFPUTSL(ob, "</rt>");
+		}
+		if (pos < w_end)
+			bufput(ob, text->data + pos, w_end - pos);
+	} else {
+		// group ruby
+		bufput(ob, text->data, w_end);
+		BUFPUTSL(ob, "<rt>");
+		bufput(ob, text->data + ruby, text->size - ruby);
+		BUFPUTSL(ob, "</rt>");
+	}
 	BUFPUTSL(ob, "</ruby>");
 	return 1;
 }

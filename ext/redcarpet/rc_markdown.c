@@ -53,8 +53,14 @@ static void rb_redcarpet_md_flags(VALUE hash, unsigned int *enabled_extensions_p
 	if (rb_hash_lookup(hash, CSTR2SYM("superscript")) == Qtrue)
 		extensions |= MKDEXT_SUPERSCRIPT;
 
-	if (rb_hash_lookup(hash, CSTR2SYM("denden")) == Qtrue)
-		extensions |= MKDEXT_DENDEN;
+	if (rb_hash_lookup(hash, CSTR2SYM("page_break")) == Qtrue)
+		extensions |= MKDEXT_PAGE_BREAK;
+
+	if (rb_hash_lookup(hash, CSTR2SYM("tcy")) == Qtrue)
+		extensions |= MKDEXT_TCY;
+
+	if (rb_hash_lookup(hash, CSTR2SYM("ruby")) == Qtrue)
+		extensions |= MKDEXT_RUBY;
 
 	*enabled_extensions_p = extensions;
 }

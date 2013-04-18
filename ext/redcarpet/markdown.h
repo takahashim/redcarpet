@@ -59,7 +59,9 @@ enum mkd_extensions {
 	MKDEXT_SPACE_HEADERS = (1 << 6),
 	MKDEXT_SUPERSCRIPT = (1 << 7),
 	MKDEXT_LAX_SPACING = (1 << 8),
-	MKDEXT_DENDEN = (1 << 9),
+	MKDEXT_PAGE_BREAK = (1 << 9),
+	MKDEXT_RUBY = (1 << 10),
+	MKDEXT_TCY = (1 << 11),
 };
 
 /* sd_callbacks - functions for rendering parsed data */

@@ -1262,7 +1262,7 @@ is_pagebreak(struct sd_markdown *rndr, uint8_t *data, size_t size)
 	size_t i = 0, n = 0;
 	uint8_t c;
 
-	if (! (rndr->ext_flags & MKDEXT_DENDEN))
+	if (! (rndr->ext_flags & MKDEXT_PAGE_BREAK))
 		return 0;
 
 	/* skipping initial spaces */
@@ -2585,10 +2585,11 @@ sd_markdown_new(
 	if (extensions & MKDEXT_SUPERSCRIPT)
 		md->active_char['^'] = MD_CHAR_SUPERSCRIPT;
 
-	if (extensions & MKDEXT_DENDEN) {
-		md->active_char['^'] = MD_CHAR_TCY;
+	if (extensions & MKDEXT_RUBY)
 		md->active_char['{'] = MD_CHAR_RUBY;
-	}
+
+	if (extensions & MKDEXT_TCY)
+		md->active_char['^'] = MD_CHAR_TCY;
 
 	/* Extension data */
 	md->ext_flags = extensions;

@@ -29,6 +29,11 @@ ARGV.delete_if do |arg|
     parse_extensions[arg.to_sym] = true
   elsif arg == '--smarty'
     renderer = Redcarpet::Render::SmartyHTML
+  elsif arg == '--denden'
+    [:hard_wrap].each { |key| render_extensions[key] = true }
+    [:page_break, :tcy, :ruby, :tables].each { |key| parse_extensions[key] = true }
+    [:superscript].each { |key| parse_extensions.delete(key) }
+    true
   else
     false
   end

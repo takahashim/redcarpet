@@ -375,7 +375,7 @@ text
   # denden markdown
   def test_page_break
     rd = render_with({:page_break => true}, "===\n")
-    assert rd =~ %r[<div class=”docbreak”></div>]
+    assert rd =~ %r[<div class="docbreak"></div>]
   end
 
   def test_group_ruby

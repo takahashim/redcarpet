@@ -379,7 +379,7 @@ rndr_pagebreak(struct buf *ob, void *opaque)
 {
 	struct html_renderopt *options = opaque;
 	if (ob->size) bufputc(ob, '\n');
-	bufputs(ob, "<div class=”docbreak”></div>\n");
+	bufputs(ob, "<div class=\"docbreak\"></div>\n");
 }
 
 static int

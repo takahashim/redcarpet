@@ -34,6 +34,8 @@ Gem::Specification.new do |s|
     ext/redcarpet/redcarpet.h
     ext/redcarpet/stack.c
     ext/redcarpet/stack.h
+    ext/redcarpet/utf8_table.c
+    ext/redcarpet/utf8_table.h
     lib/redcarpet.rb
     lib/redcarpet/compat.rb
     lib/redcarpet/render_man.rb
